@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能垃圾分类存储机器人</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #ffffff;
+            --bg-soft: #f5faf6;
+            --card: #ffffff;
+            --text: #1a2e1f;
+            --text-secondary: #5a7d5f;
+            --accent: #2ecc71;
+            --accent2: #27ae60;
+            --accent-grad: linear-gradient(135deg, #2ecc71, #1abc9c);
+            --border: #e0f0e4;
+            --shadow: 0 8px 30px rgba(46, 204, 113, 0.08);
+            --shadow-hover: 0 16px 40px rgba(46, 204, 113, 0.15);
+            --radius: 20px;
+            --font-body: 'Inter', 'Noto Sans SC', sans-serif;
+            --font-heading: 'Inter', 'Noto Sans SC', sans-serif;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: var(--font-body);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        body::before {
+            content: '';
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; z-index: 0;
+            opacity: 0.03;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%232ecc71' fill-opacity='0.2'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .top-nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 5%;
+            display: flex; align-items: center; justify-content: space-between;
+            height: 64px;
+        }
+        .nav-brand {
+            display: flex; align-items: center; gap: 10px;
+            text-decoration: none; color: var(--text);
+            font-weight: 700; font-size: 1.2rem; letter-spacing: -0.3px;
+        }
+        .nav-logo {
+            width: 34px; height: 34px; border-radius: 10px;
+            background: var(--accent-grad);
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 1rem;
+        }
+        .nav-actions { display: flex; align-items: center; gap: 8px; }
+        .nav-link {
+            text-decoration: none; color: var(--text-secondary);
+            padding: 6px 14px; border-radius: 20px; font-size: 0.9rem;
+            font-weight: 500; transition: 0.2s;
+        }
+        .nav-link:hover, .nav-link.active {
+            background: var(--accent); color: #fff;
+        }
+        .lang-btn {
+            background: var(--accent-grad); color: #fff; border: none;
+            padding: 8px 18px; border-radius: 20px; cursor: pointer;
+            font-size: 0.85rem; font-weight: 600; transition: 0.2s;
+            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.25);
+        }
+        .lang-btn:hover { opacity: 0.9; }
+
+        .hero-carousel { padding: 90px 5% 30px; }
+        .carousel-container {
+            position: relative; max-width: 1200px; margin: 0 auto;
+            border-radius: var(--radius); overflow: hidden;
+            aspect-ratio: 16/7; min-height: 380px;
+            box-shadow: var(--shadow); border: 1px solid var(--border);
+        }
+        .carousel-slide {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; transition: opacity 0.7s;
+            pointer-events: none; background: #eafaf1;
+            display: flex;
+        }
+        .carousel-slide.active { opacity: 1; pointer-events: auto; }
+        .carousel-slide img { object-fit: cover; display: block; }
+        .slide-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to right,
+                rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.6) 40%,
+                rgba(255,255,255,0.1) 100%);
+            z-index: 2;
+        }
+        .slide-content {
+            position: absolute; left: 6%; top: 50%; transform: translateY(-50%);
+            z-index: 3; max-width: 50%;
+        }
+        .slide-tag {
+            display: inline-block; padding: 4px 14px;
+            background: var(--accent); color: #fff;
+            border-radius: 20px; font-size: 0.75rem; font-weight: 600;
+            letter-spacing: 0.5px; margin-bottom: 16px;
+        }
+        .slide-title {
+            font-size: clamp(1.8rem, 4vw, 2.8rem);
+            font-weight: 800; color: var(--text);
+            margin-bottom: 10px; line-height: 1.2;
+            white-space: nowrap;
+        }
+        .slide-desc { font-size: 1.05rem; color: var(--text-secondary); margin-bottom: 18px; }
+        .slide-line { width: 50px; height: 3px; background: var(--accent); border-radius: 2px; }
+        .carousel-btn {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            width: 40px; height: 40px; border-radius: 50%;
+            background: rgba(255,255,255,0.8); backdrop-filter: blur(4px);
+            border: 1px solid var(--border); color: var(--text); font-size: 1.2rem;
+            cursor: pointer; z-index: 10; display: flex;
+            align-items: center; justify-content: center; transition: 0.2s;
+        }
+        .carousel-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .carousel-btn.prev { left: 14px; }
+        .carousel-btn.next { right: 14px; }
+        .carousel-dots {
+            position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 8px; z-index: 10;
+        }
+        .dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #b8d9c2; cursor: pointer; transition: 0.2s;
+        }
+        .dot.active { background: var(--accent); width: 24px; border-radius: 6px; }
+
+        .section { max-width: 1100px; margin: 0 auto; padding: 40px 5%; }
+        .sec-head {
+            display: flex; align-items: center; gap: 12px;
+            margin-bottom: 30px; padding-bottom: 14px;
+            border-bottom: 2px solid var(--border);
+        }
+        .sec-head h2 {
+            font-size: 1.7rem; font-weight: 800; letter-spacing: -0.5px;
+            color: var(--text);
+        }
+        .sec-head .line { flex: 1; height: 2px; background: linear-gradient(to right, var(--accent), transparent); }
+
+        .video-wrap {
+            max-width: 800px; margin: 0 auto; border-radius: var(--radius);
+            overflow: hidden; box-shadow: var(--shadow); border: 1px solid var(--border);
+        }
+        .video-wrap video { width: 100%; display: block; }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+        }
+        .card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 28px 20px;
+            text-align: center; transition: 0.3s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: var(--shadow-hover);
+        }
+        .card-icon { font-size: 2.2rem; margin-bottom: 12px; }
+        .card h2 {
+            font-size: 1.1rem; font-weight: 700; color: var(--text);
+            margin-bottom: 6px;
+        }
+        .card p { font-size: 0.9rem; color: var(--text-secondary); }
+        .card .sub {
+            display: block; font-size: 0.8rem; color: var(--accent2); margin-top: 6px; font-weight: 600;
+        }
+
+        footer {
+            text-align: center; padding: 30px 5%;
+            color: var(--text-secondary); font-size: 0.85rem;
+            border-top: 1px solid var(--border); margin-top: 40px;
+        }
+        footer .line { width: 50px; height: 2px; background: var(--accent); margin: 10px auto 0; border-radius: 1px; }
+
+        @media (max-width: 768px) {
+            .carousel-container { aspect-ratio: 16/10; min-height: 260px; }
+            .slide-content { left: 5%; max-width: 70%; }
+            .slide-title { font-size: 1.4rem; }
+            .cards { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="top-nav">
+        <a href="index.html" class="nav-brand">
+            <div class="nav-logo">♻</div>
+            <span>SmartSort</span>
+        </a>
+        <div class="nav-actions">
+            <a href="index.html" class="nav-link active" data-key="nav_home">首页</a>
+            <a href="about.html" class="nav-link" data-key="nav_about">关于</a>
+            <a href="team.html" class="nav-link" data-key="nav_team">团队</a>
+            <a href="philosophy.html" class="nav-link" data-key="nav_phil">理念</a>
+            <button class="lang-btn" id="langBtn">🌐 English</button>
+        </div>
+    </nav>
+
+    <section class="hero-carousel">
+        <div class="carousel-container">
+            <!-- Slide 1 -->
+            <div class="carousel-slide active">
+                <img src="media/hero-cover.png" alt="机器人" style="width:100%;height:100%;">
+                <div class="slide-overlay"></div>
+                <div class="slide-content">
+                    <span class="slide-tag" data-key="s1_tag">智能分拣</span>
+                    <h1 class="slide-title" data-key="s1_title">智能垃圾分类存储机器人</h1>
+                    <p class="slide-desc" data-key="s1_desc">FPGA + 颜色传感器 + L610通信 · 全自动分类存储</p>
+                    <div class="slide-line"></div>
+                </div>
+            </div>
+            <!-- Slide 2 -->
+            <div class="carousel-slide">
+                <div style="display:flex; width:100%; height:100%;">
+                    <div style="flex:1; display:flex; flex-direction:column;">
+                        <img src="media/tcs34725.png" style="width:100%; height:50%; object-fit:cover;">
+                        <img src="media/hc-sr04.png" style="width:100%; height:50%; object-fit:cover;">
+                    </div>
+                    <img src="media/mcu.png" style="flex:1; height:100%; object-fit:cover;">
+                </div>
+                <div class="slide-overlay"></div>
+                <div class="slide-content">
+                    <span class="slide-tag" data-key="s2_tag">传感器融合</span>
+                    <h1 class="slide-title" data-key="s2_title">颜色与距离双重感知</h1>
+                    <p class="slide-desc" data-key="s2_desc">TCS34725颜色识别 + HC-SR04测距<br>串口指令下发，MCU返回测量数据</p>
+                    <div class="slide-line"></div>
+                </div>
+            </div>
+            <!-- Slide 3 -->
+            <div class="carousel-slide">
+                <div style="display:flex; width:100%; height:100%;">
+                    <img src="media/l610.jpg" style="flex:1; height:100%; object-fit:cover; border-right:1px solid #e0f0e4;">
+                    <img src="media/android-host.png" style="flex:1; height:100%; object-fit:cover;">
+                </div>
+                <div class="slide-overlay"></div>
+                <div class="slide-content">
+                    <span class="slide-tag" data-key="s3_tag">物联网</span>
+                    <h1 class="slide-title" data-key="s3_title">物联网实时监控</h1>
+                    <p class="slide-desc" data-key="s3_desc">L610无线通信 · Android上位机 · 云端告警</p>
+                    <div class="slide-line"></div>
+                </div>
+            </div>
+            <button class="carousel-btn prev">&#10094;</button>
+            <button class="carousel-btn next">&#10095;</button>
+            <div class="carousel-dots"><span class="dot active" data-index="0"></span><span class="dot" data-index="1"></span><span class="dot" data-index="2"></span></div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="sec-head"><h2 data-key="video_title">演示视频</h2><div class="line"></div></div>
+        <div class="video-wrap">
+            <video controls>
+                <source src="media/video.mp4" type="video/mp4">
+            </video>
+        </div>
+        <p style="text-align:center; margin-top:12px; color:var(--text-secondary); font-size:0.9rem;" data-key="video_desc">爆炸视图动画</p>
+    </section>
+
+    <section class="section">
+        <div class="sec-head"><h2 data-key="feat_title">核心功能</h2><div class="line"></div></div>
+        <div class="cards" id="featureCards"></div>
+    </section>
+
+    <section class="section">
+        <div class="sec-head"><h2 data-key="arch_title">系统架构</h2><div class="line"></div></div>
+        <div class="cards" id="archCards"></div>
+    </section>
+
+    <footer>
+        <p data-key="footer">© 2026 智能垃圾分类存储机器人项目组</p>
+        <div class="line"></div>
+    </footer>
+
+    <script>
+        // 轮播逻辑
+        (function() {
+            const slides = document.querySelectorAll('.carousel-slide');
+            const dots = document.querySelectorAll('.dot');
+            let idx = 0, timer;
+            function go(n) {
+                slides.forEach(s => s.classList.remove('active'));
+                dots.forEach(d => d.classList.remove('active'));
+                idx = (n + slides.length) % slides.length;
+                slides[idx].classList.add('active');
+                dots[idx].classList.add('active');
+            }
+            function next() { go(idx+1); }
+            function prev() { go(idx-1); }
+            function play() { clearInterval(timer); timer = setInterval(next, 4500); }
+            function stop() { clearInterval(timer); }
+            document.querySelector('.carousel-btn.next').addEventListener('click',()=>{next();play();});
+            document.querySelector('.carousel-btn.prev').addEventListener('click',()=>{prev();play();});
+            dots.forEach(d => d.addEventListener('click',()=>{
+                go(parseInt(d.dataset.index));
+                play();
+            }));
+            const ct = document.querySelector('.carousel-container');
+            ct.addEventListener('mouseenter', stop);
+            ct.addEventListener('mouseleave', play);
+            let tx = 0;
+            ct.addEventListener('touchstart', e => { tx = e.changedTouches[0].screenX; stop(); }, {passive:true});
+            ct.addEventListener('touchend', e => {
+                if (e.changedTouches[0].screenX < tx-40) next();
+                if (e.changedTouches[0].screenX > tx+40) prev();
+                play();
+            });
+            play();
+        })();
+    </script>
+
+    <script>
+        // 动态卡片生成
+        const featureData = [
+            {icon:'🧠', t:'c1t', d:'c1d', sub:'c1_sub'},
+            {icon:'🎨', t:'c2t', d:'c2d', sub:'c2_sub'},
+            {icon:'📡', t:'c3t', d:'c3d', sub:'c3_sub'},
+            {icon:'📱', t:'c4t', d:'c4d', sub:'c4_sub'},
+            {icon:'👤', t:'c5t', d:'c5d', sub:'c5_sub'},
+            {icon:'🔧', t:'c6t', d:'c6d', sub:'c6_sub'}
+        ];
+        const archData = [
+            {icon:'📱', t:'a1t', d:'a1d'},
+            {icon:'🔌', t:'a2t', d:'a2d'},
+            {icon:'⚡', t:'a3t', d:'a3d'},
+            {icon:'📡', t:'a4t', d:'a4d'},
+            {icon:'👁', t:'a5t', d:'a5d'},
+            {icon:'📏', t:'a6t', d:'a6d'}
+        ];
+        function buildCards(containerId, items) {
+            const container = document.getElementById(containerId);
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `<div class="card-icon">${item.icon}</div><h2 data-key="${item.t}"></h2><p data-key="${item.d}"></p>${item.sub ? `<span class="sub" data-key="${item.sub}"></span>` : ''}`;
+                container.appendChild(card);
+            });
+        }
+        buildCards('featureCards', featureData);
+        buildCards('archCards', archData);
+
+        // 翻译字典
+        const zh = {
+            nav_home:'首页', nav_about:'关于', nav_team:'团队', nav_phil:'理念',
+            s1_tag:'智能分拣', s1_title:'智能垃圾分类存储机器人', s1_desc:'FPGA + 颜色传感器 + L610通信 · 全自动分类存储',
+            s2_tag:'传感器融合', s2_title:'颜色与距离双重感知', s2_desc:'TCS34725颜色识别 + HC-SR04测距<br>串口指令下发，MCU返回测量数据',
+            s3_tag:'物联网', s3_title:'物联网实时监控', s3_desc:'L610无线通信 · Android上位机 · 云端告警',
+            video_title:'演示视频', video_desc:'爆炸视图动画',
+            feat_title:'核心功能',
+            c1t:'FPGA控制单元', c1d:'核心逻辑控制，驱动伺服电机，读取测距传感器数据', c1_sub:'Altera Cyclone IV',
+            c2t:'颜色传感器识别', c2d:'分辨3-4种颜色，确定垃圾种类，触发对应分类动作', c2_sub:'TCS3200 RGB Sensor',
+            c3t:'L610物联网通信', c3d:'实时上报垃圾桶状态至云端，满溢自动告警物业中心', c3_sub:'4G LTE Cat.1',
+            c4t:'Android上位机', c4d:'中英文语音引导，LCD显示余量，手机端实时查看状态', c4_sub:'Java + SQLite',
+            c5t:'测距安全防护', c5d:'确保用户在场且保持至少10cm距离，防止误触受伤', c5_sub:'HC-SR04 Ultrasonic',
+            c6t:'双模式运行', c6d:'操作模式全自动运行，维护模式GUI测试与调试', c6_sub:'Auto / Manual',
+            arch_title:'系统架构',
+            a1t:'Android上位机', a1d:'中英文切换 · 语音引导 · LCD显示 · 云端通信',
+            a2t:'微控制器单元', a2d:'命令生成 · 数据中转 · 与FPGA及云端通信',
+            a3t:'FPGA开发板', a3d:'电机控制 · 传感器读取 · 状态显示',
+            a4t:'L610无线模组', a4d:'4G通信 · 数据上报 · 告警推送',
+            a5t:'颜色传感器', a5d:'RGB识别 · 垃圾分类判定',
+            a6t:'测距传感器', a6d:'用户距离检测 · 10cm安全防护',
+            footer:'© 2026 智能垃圾分类存储机器人项目组'
+        };
+        const en = {
+            nav_home:'Home', nav_about:'About', nav_team:'Team', nav_phil:'Philosophy',
+            s1_tag:'Intelligent Sorting', s1_title:'Smart Garbage Sorting Robot', s1_desc:'FPGA + Color Sensor + L610 · Fully Automatic Sorting',
+            s2_tag:'Sensor Fusion', s2_title:'Dual Perception of Color & Distance', s2_desc:'TCS34725 color recognition + HC-SR04 ranging<br>Serial command interaction with MCU',
+            s3_tag:'IoT', s3_title:'Real-Time IoT Monitoring', s3_desc:'L610 Wireless · Android Host · Cloud Alert',
+            video_title:'Demo Video', video_desc:'Exploded View Animation',
+            feat_title:'Core Features',
+            c1t:'FPGA Control Unit', c1d:'Core logic control, servo motor drive, distance sensor reading', c1_sub:'Altera Cyclone IV',
+            c2t:'Color Sensor Recognition', c2d:'Distinguishes 3-4 colors, triggers sorting action', c2_sub:'TCS3200 RGB Sensor',
+            c3t:'L610 IoT Communication', c3d:'Real-time bin status reporting, auto alert when full', c3_sub:'4G LTE Cat.1',
+            c4t:'Android Host System', c4d:'Bilingual voice guidance, LCD display, mobile monitoring', c4_sub:'Java + SQLite',
+            c5t:'Distance Safety Shield', c5d:'User presence detection, 10cm minimum distance', c5_sub:'HC-SR04 Ultrasonic',
+            c6t:'Dual-Mode Operation', c6d:'Automatic operation / GUI maintenance mode', c6_sub:'Auto / Manual',
+            arch_title:'System Architecture',
+            a1t:'Android Host', a1d:'Bilingual · Voice Guidance · LCD · Cloud',
+            a2t:'Microcontroller Unit', a2d:'Command generation · Data relay · FPGA & Cloud',
+            a3t:'FPGA Board', a3d:'Motor control · Sensor reading · Status display',
+            a4t:'L610 Module', a4d:'4G communication · Data report · Alert push',
+            a5t:'Color Sensor', a5d:'RGB recognition · Waste classification',
+            a6t:'Distance Sensor', a6d:'User distance detection · 10cm safety',
+            footer:'© 2026 Smart Garbage Sorting Robot Team'
+        };
+        const dict = {zh, en};
+        let current = 'zh';
+        function applyLang(lang) {
+            document.querySelectorAll('[data-key]').forEach(el => {
+                const key = el.dataset.key;
+                if (dict[lang][key]) el.innerHTML = dict[lang][key];
+            });
+        }
+        document.getElementById('langBtn').addEventListener('click', () => {
+            current = current === 'zh' ? 'en' : 'zh';
+            document.getElementById('langBtn').textContent = current === 'zh' ? '🌐 English' : '🌐 中文';
+            applyLang(current);
+        });
+        applyLang('zh');
+    </script>
+</body>
+</html>
